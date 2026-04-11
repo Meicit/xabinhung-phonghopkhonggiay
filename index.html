@@ -3,77 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phòng Họp Không Giấy - UBND</title>
+    <title>Đại Biểu - Phòng Họp Không Giấy</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .card { transition: all 0.2s ease; }
-        .card:hover { transform: translateY(-2px); shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-    </style>
 </head>
-<body class="bg-gray-100 text-gray-900 font-sans">
-
-    <header class="bg-red-700 text-white p-4 shadow-md sticky top-0 z-50">
+<body class="bg-slate-50 text-slate-900 font-sans">
+    <header class="bg-red-700 text-white p-4 shadow-lg sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
-            <div>
-                <h1 class="font-bold text-xl uppercase tracking-wider">Phòng Họp Số</h1>
-                <p class="text-xs opacity-80">Hệ thống quản lý tài liệu & biểu quyết</p>
-            </div>
-            <div id="connection-status" class="text-xs bg-red-900 px-3 py-1 rounded-full border border-red-400">Đang kết nối...</div>
+            <h1 class="font-bold uppercase tracking-tight">Hệ Thống Họp Số</h1>
+            <div id="connection-status" class="text-[10px] bg-red-900 px-2 py-1 rounded-full border border-red-400 italic">Đang kết nối...</div>
         </div>
     </header>
 
-    <main class="container mx-auto p-4 max-w-4xl space-y-6">
-        
-        <section class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-            <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex justify-between items-center">
-                <h2 class="font-bold text-gray-700 flex items-center italic">📄 TÀI LIỆU CÀI ĐẶT</h2>
+    <main class="container mx-auto p-4 max-w-2xl space-y-6">
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-100 px-5 py-3 border-b border-slate-200 flex justify-between items-center">
+                <h2 class="font-bold text-slate-700">📄 TÀI LIỆU CUỘC HỌP</h2>
+                <span class="text-[10px] text-slate-500 uppercase">Thời gian thực</span>
             </div>
-            <div id="file-list" class="p-5 grid gap-3">
-                <p class="text-gray-400 text-sm italic text-center">Đang tải danh sách tài liệu...</p>
+            <div id="file-list" class="p-4 grid gap-3 text-sm text-center text-slate-400 italic">Đang tải tài liệu...</div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-sm border-t-4 border-blue-600 p-5">
+            <h2 class="font-bold text-lg mb-3 text-blue-800">📊 BIỂU QUYẾT TRỰC TUYẾN</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="vote('yes')" class="bg-green-600 text-white font-bold py-4 rounded-xl shadow-md active:scale-95 transition hover:bg-green-700">ĐỒNG Ý</button>
+                <button onclick="vote('no')" class="bg-red-600 text-white font-bold py-4 rounded-xl shadow-md active:scale-95 transition hover:bg-red-700">KHÔNG ĐỒNG Ý</button>
+            </div>
+            <div class="mt-4 h-3 bg-slate-100 rounded-full overflow-hidden">
+                <div id="vote-bar" class="bg-green-500 h-full transition-all duration-700" style="width: 0%"></div>
             </div>
         </section>
 
-        <section class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 border-t-4 border-blue-600">
-            <div class="p-5">
-                <h2 class="font-bold text-lg mb-2 flex items-center text-blue-800">📊 BIỂU QUYẾT TRỰC TUYẾN</h2>
-                <p class="text-sm text-gray-600 mb-4 bg-blue-50 p-3 rounded border-l-4 border-blue-300">Nội dung: Thông qua kế hoạch phát triển kinh tế - xã hội địa phương năm 2026.</p>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <button onclick="vote('yes')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">ĐỒNG Ý</button>
-                    <button onclick="vote('no')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">KHÔNG ĐỒNG Ý</button>
-                </div>
-
-                <div class="mt-6 space-y-2">
-                    <div class="flex justify-between text-sm font-semibold">
-                        <span id="vote-info">Chưa có biểu quyết nào</span>
-                        <span id="vote-percent">0%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-4">
-                        <div id="vote-bar" class="bg-green-500 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
-                    </div>
-                </div>
+        <section class="bg-white rounded-2xl shadow-sm p-5 border border-slate-200">
+            <h2 class="font-bold mb-4 text-slate-700">🎤 ĐĂNG KÝ PHÁT BIỂU</h2>
+            <div class="flex gap-2">
+                <input type="text" id="speaker-name" placeholder="Họ và tên đại biểu..." class="flex-1 border p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+                <button onclick="registerSpeech()" class="bg-blue-700 text-white px-6 rounded-xl font-bold hover:bg-blue-800 transition">GỬI</button>
             </div>
         </section>
-
-        <section class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-            <div class="p-5">
-                <h2 class="font-bold text-lg mb-4 text-gray-700">🎤 ĐĂNG KÝ PHÁT BIỂU</h2>
-                <div class="flex gap-2 mb-4">
-                    <input type="text" id="speaker-name" placeholder="Nhập tên đại biểu..." class="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    <button onclick="registerSpeech()" class="bg-blue-700 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-800 transition">GỬI</button>
-                </div>
-                <div class="space-y-2" id="speech-list">
-                    </div>
-            </div>
-        </section>
-
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, push, increment, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, onValue, push, increment, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Cấu hình của bạn đã được cập nhật databaseURL
         const firebaseConfig = {
             apiKey: "AIzaSyCTxFuyP3SjFvoRDdX5cvT94bH6KlWr-_M",
             authDomain: "phong-hop-khong-giay-6d773.firebaseapp.com",
@@ -81,92 +54,53 @@
             projectId: "phong-hop-khong-giay-6d773",
             storageBucket: "phong-hop-khong-giay-6d773.firebasestorage.app",
             messagingSenderId: "1026193403538",
-            appId: "1:1026193403538:web:6083ad5c718dc8749b004b",
-            measurementId: "G-8NH44Z7H0V"
+            appId: "1:1026193403538:web:6083ad5c718dc8749b004b"
         };
 
-        // Khởi tạo Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 1. Theo dõi kết nối
-        const connectedRef = ref(db, ".info/connected");
-        onValue(connectedRef, (snap) => {
-            const statusDiv = document.getElementById('connection-status');
-            if (snap.val() === true) {
-                statusDiv.innerText = "Trực tuyến";
-                statusDiv.className = "text-xs bg-green-800 px-3 py-1 rounded-full border border-green-400";
-            } else {
-                statusDiv.innerText = "Mất kết nối";
-                statusDiv.className = "text-xs bg-red-800 px-3 py-1 rounded-full border border-red-400";
-            }
+        // Trạng thái mạng
+        onValue(ref(db, ".info/connected"), (s) => {
+            const el = document.getElementById('connection-status');
+            el.innerText = s.val() ? "Trực tuyến" : "Mất kết nối";
+            el.className = s.val() ? "text-[10px] bg-green-800 px-2 py-1 rounded-full border border-green-400" : "text-[10px] bg-red-800 px-2 py-1 rounded-full border border-red-400";
         });
 
-        // 2. Xử lý biểu quyết
-        window.vote = function(type) {
-            const voteRef = ref(db, 'votes');
-            const updates = {};
-            updates[type] = increment(1);
-            update(voteRef, updates).then(() => {
-                alert("Đã ghi nhận biểu quyết!");
+        // Tài liệu (Lấy từ nhánh 'documents' do trang nhaplieu.html đẩy lên)
+        onValue(ref(db, 'documents'), (snap) => {
+            const list = document.getElementById('file-list');
+            list.innerHTML = "";
+            if (!snap.exists()) return list.innerHTML = "<p class='py-4'>Chưa có tài liệu cuộc họp.</p>";
+            snap.forEach((c) => {
+                const f = c.val();
+                list.innerHTML += `<div class="flex justify-between items-center p-3 border-b border-slate-50 last:border-0 text-left">
+                    <span class="font-medium text-slate-700 truncate mr-2">${f.name}</span>
+                    <button onclick="window.open('${f.url}', '_blank')" class="bg-blue-600 text-white px-5 py-1.5 rounded-lg text-xs font-bold shadow-sm">XEM</button>
+                </div>`;
             });
+        });
+
+        // Biểu quyết
+        window.vote = (type) => {
+            update(ref(db, 'votes'), { [type]: increment(1) }).then(() => alert("Đã gửi biểu quyết!"));
         };
 
-        onValue(ref(db, 'votes'), (snapshot) => {
-            const data = snapshot.val() || { yes: 0, no: 0 };
-            const total = (data.yes || 0) + (data.no || 0);
-            const percent = total > 0 ? Math.round((data.yes / total) * 100) : 0;
-            
-            document.getElementById('vote-info').innerText = `${total} đại biểu đã tham gia`;
-            document.getElementById('vote-percent').innerText = `${percent}%`;
-            document.getElementById('vote-bar').style.width = percent + '%';
+        onValue(ref(db, 'votes'), (snap) => {
+            const d = snap.val() || { yes: 0, no: 0 };
+            const total = (d.yes || 0) + (d.no || 0);
+            const p = total > 0 ? Math.round((d.yes / total) * 100) : 0;
+            document.getElementById('vote-bar').style.width = p + '%';
         });
 
-        // 3. Xử lý đăng ký phát biểu
-        window.registerSpeech = function() {
+        // Đăng ký phát biểu
+        window.registerSpeech = () => {
             const name = document.getElementById('speaker-name').value;
-            if (!name) return alert("Vui lòng nhập tên đại biểu");
-            
-            const listRef = ref(db, 'speakers');
-            push(listRef, {
-                name: name,
-                time: new Date().toLocaleTimeString()
-            });
+            if (!name) return alert("Vui lòng nhập tên");
+            push(ref(db, 'speakers'), { name, time: new Date().toLocaleTimeString() });
             document.getElementById('speaker-name').value = "";
+            alert("Đã đăng ký danh sách phát biểu!");
         };
-
-        onValue(ref(db, 'speakers'), (snapshot) => {
-            const listDiv = document.getElementById('speech-list');
-            listDiv.innerHTML = "";
-            snapshot.forEach((child) => {
-                const item = child.val();
-                listDiv.innerHTML += `
-                    <div class="flex justify-between items-center p-3 bg-gray-50 border rounded-lg">
-                        <span class="font-bold text-blue-700">${item.name}</span>
-                        <span class="text-xs text-gray-400">${item.time}</span>
-                    </div>
-                `;
-            });
-        });
-
-        // 4. Danh sách tài liệu (Tạm thời lấy dữ liệu từ DB)
-        onValue(ref(db, 'documents'), (snapshot) => {
-            const fileList = document.getElementById('file-list');
-            fileList.innerHTML = "";
-            if (!snapshot.exists()) {
-                fileList.innerHTML = "<p class='text-gray-400 text-sm italic'>Chưa có tài liệu nào được tải lên.</p>";
-                return;
-            }
-            snapshot.forEach((child) => {
-                const file = child.val();
-                fileList.innerHTML += `
-                    <div class="flex justify-between items-center p-3 border rounded-lg hover:bg-gray-50">
-                        <span class="text-sm font-medium text-gray-700">${file.name}</span>
-                        <button onclick="window.open('${file.url}', '_blank')" class="text-blue-600 text-sm font-bold">XEM</button>
-                    </div>
-                `;
-            });
-        });
     </script>
 </body>
 </html>
