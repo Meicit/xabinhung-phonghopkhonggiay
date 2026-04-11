@@ -3,33 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đại Biểu - Phòng Họp Số</title>
+    <title>Đại Biểu - Xem Trực Tiếp</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Hiệu ứng mượt cho khung xem tài liệu */
+        #preview-modal { transition: opacity 0.3s ease; }
+        .iframe-container { height: calc(100vh - 120px); }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans">
+    
     <header class="bg-red-700 text-white p-4 shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="font-bold uppercase tracking-tight">Hệ Thống Họp Số</h1>
-            <div id="connection-status" class="text-[10px] bg-red-900 px-2 py-1 rounded-full border border-red-400 italic">Kết nối...</div>
-        </div>
+        <h1 class="text-center font-bold uppercase">Phòng Họp Không Giấy</h1>
     </header>
 
-    <main class="container mx-auto p-4 max-w-2xl space-y-6">
+    <main class="container mx-auto p-4 max-w-2xl">
         <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="bg-slate-100 px-5 py-3 border-b border-slate-200">
-                <h2 class="font-bold text-slate-700">📄 TÀI LIỆU CUỘC HỌP</h2>
+                <h2 class="font-bold text-slate-700 uppercase text-sm">📄 Danh sách tài liệu</h2>
             </div>
-            <div id="file-list" class="p-4 grid gap-3 text-sm text-center text-slate-400 italic">Đang tải tài liệu...</div>
+            <div id="file-list" class="divide-y divide-slate-100">
+                <p class="text-slate-400 text-center py-10 italic text-sm">Đang tải...</p>
+            </div>
         </section>
 
-        <section class="bg-white rounded-2xl shadow-sm p-5 border border-slate-200">
-            <h2 class="font-bold mb-4 text-slate-700 italic">🎤 ĐĂNG KÝ PHÁT BIỂU</h2>
+        <section class="mt-6 bg-white p-5 rounded-2xl border border-slate-200">
+            <h2 class="font-bold mb-3 text-sm">🎤 ĐĂNG KÝ PHÁT BIỂU</h2>
             <div class="flex gap-2">
-                <input type="text" id="speaker-name" placeholder="Họ và tên đại biểu..." class="flex-1 border p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
-                <button onclick="registerSpeech()" class="bg-blue-700 text-white px-6 rounded-xl font-bold hover:bg-blue-800 transition">GỬI</button>
+                <input type="text" id="speaker-name" placeholder="Họ tên..." class="flex-1 border p-2 rounded-lg text-sm bg-slate-50">
+                <button onclick="registerSpeech()" class="bg-blue-700 text-white px-4 rounded-lg text-sm font-bold">GỬI</button>
             </div>
         </section>
     </main>
+
+    <div id="preview-modal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-75 flex flex-col">
+        <div class="bg-white p-3 flex justify-between items-center shadow-lg">
+            <span id="preview-title" class="font-bold text-slate-700 truncate mr-4">Tài liệu</span>
+            <button onclick="closePreview()" class="bg-red-600 text-white px-4 py-1 rounded font-bold uppercase text-xs italic">Đóng lại [X]</button>
+        </div>
+        <div class="iframe-container w-full flex-1">
+            <iframe id="preview-frame" src="" class="w-full h-full border-0"></iframe>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -39,40 +54,49 @@
             apiKey: "AIzaSyCTxFuyP3SjFvoRDdX5cvT94bH6KlWr-_M",
             authDomain: "phong-hop-khong-giay-6d773.firebaseapp.com",
             databaseURL: "https://phong-hop-khong-giay-6d773-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "phong-hop-khong-giay-6d773",
-            storageBucket: "phong-hop-khong-giay-6d773.firebasestorage.app",
-            messagingSenderId: "1026193403538",
-            appId: "1:1026193403538:web:6083ad5c718dc8749b004b"
+            projectId: "phong-hop-khong-giay-6d773"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        onValue(ref(db, ".info/connected"), (s) => {
-            const el = document.getElementById('connection-status');
-            el.innerText = s.val() ? "Trực tuyến" : "Mất kết nối";
-            el.className = s.val() ? "text-[10px] bg-green-800 px-2 py-1 rounded-full border border-green-400" : "text-[10px] bg-red-800 px-2 py-1 rounded-full border border-red-400";
-        });
-
+        // Hiển thị danh sách tài liệu
         onValue(ref(db, 'documents'), (snap) => {
             const list = document.getElementById('file-list');
             list.innerHTML = "";
-            if (!snap.exists()) return list.innerHTML = "<p class='py-4'>Chưa có tài liệu cuộc họp.</p>";
+            if (!snap.exists()) return list.innerHTML = "<p class='p-10 text-center text-slate-400'>Trống.</p>";
+            
             snap.forEach((c) => {
                 const f = c.val();
-                list.innerHTML += `<div class="flex justify-between items-center p-3 border-b border-slate-50 last:border-0 text-left">
-                    <span class="font-medium text-slate-700 truncate mr-2">${f.name}</span>
-                    <button onclick="window.open('${f.url}', '_blank')" class="bg-blue-600 text-white px-5 py-1.5 rounded-lg text-xs font-bold shadow-sm">XEM</button>
+                list.innerHTML += `
+                <div class="flex justify-between items-center p-4 hover:bg-slate-50">
+                    <span class="font-medium text-slate-700 text-sm truncate mr-2">${f.name}</span>
+                    <button onclick="openPreview('${f.url}', '${f.name}')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold uppercase shadow-sm">Xem trực tiếp</button>
                 </div>`;
             });
         });
 
+        // Hàm mở khung xem
+        window.openPreview = (url, name) => {
+            document.getElementById('preview-title').innerText = name;
+            // Sử dụng Google Docs Viewer để xem trực tiếp PDF/Word/Excel mà không cần tải
+            document.getElementById('preview-frame').src = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+            document.getElementById('preview-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Chống cuộn trang phía dưới
+        };
+
+        window.closePreview = () => {
+            document.getElementById('preview-modal').classList.add('hidden');
+            document.getElementById('preview-frame').src = ""; // Reset frame
+            document.body.style.overflow = 'auto';
+        };
+
         window.registerSpeech = () => {
             const name = document.getElementById('speaker-name').value;
-            if (!name) return alert("Vui lòng nhập tên");
-            push(ref(db, 'speakers'), { name, time: new Date().toLocaleTimeString() });
+            if (!name) return;
+            push(ref(db, 'speakers'), { name, time: new Date().toLocaleTimeString('vi-VN') });
             document.getElementById('speaker-name').value = "";
-            alert("Đã đăng ký danh sách phát biểu!");
+            alert("Đã đăng ký phát biểu!");
         };
     </script>
 </body>
