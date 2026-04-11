@@ -9,51 +9,48 @@
 <body class="bg-gray-950 text-gray-200 font-sans min-h-screen">
     <header class="bg-gray-900 p-4 border-b border-gray-800 shadow-xl text-center">
         <h1 class="font-black text-yellow-500 tracking-tighter text-2xl uppercase">Hệ Thống Nhập Liệu</h1>
-        <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Cán bộ quản lý nội dung họp</p>
     </header>
 
     <main class="container mx-auto p-4 max-w-2xl space-y-8 mt-4">
         
         <section class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-2xl">
-            <h2 class="font-bold mb-5 text-blue-400 flex items-center">
-                <span class="bg-blue-500/10 p-2 rounded-lg mr-2">📁</span> THÊM TÀI LIỆU MỚI
+            <h2 class="font-bold mb-5 text-blue-400 flex items-center italic">
+                📁 TẢI TÀI LIỆU TỪ MÁY TÍNH
             </h2>
             <div class="space-y-4">
                 <div>
-                    <label class="text-[10px] text-gray-500 ml-1 mb-1 block">Tên hiển thị tài liệu</label>
-                    <input type="text" id="doc-name" placeholder="Ví dụ: Báo cáo kinh tế xã hội quý I" class="w-full bg-gray-800 p-3 rounded-xl outline-none border border-gray-700 focus:border-blue-500 transition">
+                    <label class="text-[10px] text-gray-500 ml-1 mb-1 block">Chọn tệp văn bản (PDF, Word, Excel...)</label>
+                    <input type="file" id="file-input" class="w-full bg-gray-800 p-2 rounded-xl border border-gray-700 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
                 </div>
                 <div>
-                    <label class="text-[10px] text-gray-500 ml-1 mb-1 block">Link PDF (Lấy từ Firebase Storage)</label>
-                    <input type="text" id="doc-url" placeholder="https://firebasestorage.googleapis.com/..." class="w-full bg-gray-800 p-3 rounded-xl outline-none border border-gray-700 focus:border-blue-500 transition text-xs">
+                    <label class="text-[10px] text-gray-500 ml-1 mb-1 block">Tên hiển thị tài liệu</label>
+                    <input type="text" id="doc-name-upload" placeholder="Ví dụ: Báo cáo kinh tế xã hội" class="w-full bg-gray-800 p-3 rounded-xl outline-none border border-gray-700 focus:border-blue-500 transition">
                 </div>
-                <button onclick="uploadDoc()" class="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-black text-white shadow-lg shadow-blue-900/20 transition-all">CẬP NHẬT TÀI LIỆU</button>
+                <div id="upload-status" class="text-xs text-yellow-500 hidden">Đang tải file lên... 0%</div>
+                <button onclick="handleFileUpload()" class="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-black text-white transition-all shadow-lg">TẢI LÊN & CẬP NHẬT</button>
             </div>
         </section>
 
         <section class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-2xl">
             <div class="flex justify-between items-center mb-5 border-b border-gray-800 pb-4">
-                <h2 class="font-bold text-green-400">🎤 DANH SÁCH PHÁT BIỂU</h2>
-                <button onclick="clearData('speakers')" class="text-[10px] bg-red-600/20 text-red-400 px-4 py-1.5 rounded-full border border-red-500/30 hover:bg-red-600 hover:text-white transition">DỌN DẸP DANH SÁCH</button>
+                <h2 class="font-bold text-green-400 italic">🎤 DANH SÁCH PHÁT BIỂU</h2>
+                <button onclick="clearData('speakers')" class="text-[10px] bg-red-600/20 text-red-400 px-4 py-1.5 rounded-full border border-red-500/30 hover:bg-red-600 hover:text-white transition">DỌN DẸP</button>
             </div>
-            <div id="nhaplieu-speech-list" class="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+            <div id="nhaplieu-speech-list" class="space-y-3 max-h-60 overflow-y-auto pr-2">
                 <p class="text-gray-600 text-sm italic text-center">Chưa có ai đăng ký...</p>
             </div>
         </section>
 
-        <section class="bg-gray-900 p-6 rounded-2xl border border-gray-800 text-center">
-            <h2 class="font-bold mb-4 text-purple-400 uppercase text-xs tracking-widest">Trung tâm điều khiển</h2>
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="clearData('votes')" class="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold py-3 rounded-xl transition">LÀM MỚI BIỂU QUYẾT</button>
-                <button onclick="clearData('documents')" class="bg-gray-700 hover:bg-red-900 text-white text-xs font-bold py-3 rounded-xl transition">XÓA TẤT CẢ TÀI LIỆU</button>
-            </div>
+        <section class="bg-gray-900 p-4 rounded-2xl border border-gray-800 text-center">
+            <button onclick="clearData('documents')" class="w-full bg-gray-700 hover:bg-red-900 text-white text-xs font-bold py-3 rounded-xl transition uppercase">Xóa tất cả tài liệu họp</button>
         </section>
 
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCTxFuyP3SjFvoRDdX5cvT94bH6KlWr-_M",
@@ -67,19 +64,39 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const storage = getStorage(app);
 
-        // Nhập tài liệu
-        window.uploadDoc = () => {
-            const name = document.getElementById('doc-name').value;
-            const url = document.getElementById('doc-url').value;
-            if (!name || !url) return alert("Vui lòng không để trống thông tin!");
-            push(ref(db, 'documents'), { name, url });
-            document.getElementById('doc-name').value = "";
-            document.getElementById('doc-url').value = "";
-            alert("Đã cập nhật tài liệu lên hệ thống đại biểu!");
+        // Xử lý tải file từ máy tính
+        window.handleFileUpload = () => {
+            const file = document.getElementById('file-input').files[0];
+            const name = document.getElementById('doc-name-upload').value;
+            const status = document.getElementById('upload-status');
+
+            if (!file || !name) return alert("Vui lòng chọn file và nhập tên hiển thị!");
+
+            const storageRef = sRef(storage, 'documents/' + file.name);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            status.classList.remove('hidden');
+
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    status.innerText = 'Đang tải file lên... ' + Math.round(progress) + '%';
+                }, 
+                (error) => { alert("Lỗi khi tải file: " + error.message); }, 
+                () => {
+                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                        push(ref(db, 'documents'), { name: name, url: downloadURL });
+                        status.innerText = "Tải lên thành công!";
+                        setTimeout(() => status.classList.add('hidden'), 2000);
+                        document.getElementById('file-input').value = "";
+                        document.getElementById('doc-name-upload').value = "";
+                    });
+                }
+            );
         };
 
-        // Xem danh sách phát biểu (Cập nhật thời gian thực)
         onValue(ref(db, 'speakers'), (snap) => {
             const list = document.getElementById('nhaplieu-speech-list');
             list.innerHTML = "";
@@ -93,11 +110,9 @@
             });
         });
 
-        // Xóa dữ liệu (Reset)
         window.clearData = (path) => {
-            const labels = {'speakers': 'Danh sách phát biểu', 'votes': 'Số liệu biểu quyết', 'documents': 'Tất cả tài liệu'};
-            if (confirm(`Hệ thống sẽ xóa sạch: ${labels[path]}. Bạn chắc chắn chứ?`)) {
-                remove(ref(db, path)).then(() => alert("Dữ liệu đã được làm mới!"));
+            if (confirm(`Hệ thống sẽ xóa sạch dữ liệu mục này. Bạn chắc chắn chứ?`)) {
+                remove(ref(db, path)).then(() => alert("Đã xóa xong!"));
             }
         };
     </script>
