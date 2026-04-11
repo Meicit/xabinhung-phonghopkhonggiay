@@ -2,34 +2,56 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đại Biểu - Phòng Họp Số</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Đại Biểu - Hệ Thống Họp Số</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .meeting-card:active { transform: scale(0.98); }
+        body { -webkit-tap-highlight-color: transparent; }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
+<body class="bg-slate-100 text-slate-900 font-sans min-h-screen">
+    
     <header class="bg-red-700 text-white p-4 shadow-lg sticky top-0 z-50 flex justify-between items-center">
-        <h1 class="font-bold uppercase text-xs">UBND - Phòng Họp Không Giấy</h1>
-        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+        <div class="flex items-center gap-2">
+            <button id="back-btn" onclick="showMeetings()" class="hidden mr-2 bg-red-800 p-2 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+            </button>
+            <h1 class="font-bold uppercase text-xs tracking-tight" id="header-title">Danh sách phiên họp</h1>
+        </div>
+        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
     </header>
 
-    <main class="container mx-auto p-4 max-w-2xl space-y-4">
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-            <label class="text-[10px] uppercase font-bold text-slate-400 mb-2 block">Chọn phiên họp:</label>
-            <select id="meeting-filter" onchange="loadDocsByMeeting()" class="w-full bg-slate-100 p-3 rounded-xl font-bold text-blue-700 outline-none">
-                <option value="ALL">--- Xem tất cả tài liệu ---</option>
-            </select>
+    <main class="container mx-auto p-4 max-w-2xl">
+        
+        <div id="meeting-container" class="grid grid-cols-1 gap-4">
+            <p class="text-center text-slate-400 py-10 italic">Đang tải danh sách phiên họp...</p>
         </div>
 
-        <section class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden min-h-[300px]">
-            <div id="file-list" class="divide-y divide-slate-100"></div>
-        </section>
+        <div id="document-container" class="hidden space-y-4">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div id="file-list" class="divide-y divide-slate-100">
+                    </div>
+            </div>
+            
+            <section class="bg-white p-6 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50">
+                <h2 class="font-bold mb-4 text-sm uppercase text-slate-600 border-l-4 border-blue-600 pl-3">Đăng ký phát biểu</h2>
+                <div class="flex gap-2">
+                    <input type="text" id="speaker-name" placeholder="Họ và tên đại biểu..." class="flex-1 border-0 bg-slate-100 p-4 rounded-2xl text-sm outline-none">
+                    <button onclick="registerSpeech()" class="bg-blue-700 text-white px-8 rounded-2xl font-bold active:scale-95 transition">GỬI</button>
+                </div>
+            </section>
+        </div>
+
     </main>
 
     <div id="preview-modal" class="hidden fixed inset-0 z-[100] bg-black flex flex-col">
         <div class="bg-white p-4 flex justify-between items-center">
-            <span id="preview-title" class="font-bold text-sm truncate italic">Đang tải...</span>
-            <button onclick="closePreview()" class="bg-red-600 text-white px-6 py-2 rounded-xl text-xs font-black uppercase">Đóng</button>
+            <span id="preview-title" class="font-bold text-sm truncate italic text-slate-700">Tài liệu</span>
+            <button onclick="closePreview()" class="bg-red-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase">Đóng [X]</button>
         </div>
         <iframe id="preview-frame" src="" class="w-full flex-1 border-0 bg-slate-200"></iframe>
     </div>
@@ -39,55 +61,87 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vaGZpeXNpanh3bnVoYWtvZHZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4NjkzMjQsImV4cCI6MjA5MTQ0NTMyNH0.eG6JTSuNm6bDd2fs8YfNLo3zcyR2fKChrtNXoz4LKNU';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Lấy danh sách các tên cuộc họp duy nhất để vào ô Chọn
-        async function loadMeetingNames() {
+        let currentMeeting = "";
+
+        // 1. Lấy danh sách các cuộc họp duy nhất
+        async function loadMeetings() {
             const { data } = await _supabase.from('documents').select('meeting_name');
             const uniqueMeetings = [...new Set(data.map(item => item.meeting_name))];
-            const select = document.getElementById('meeting-filter');
-            const currentValue = select.value;
             
-            select.innerHTML = '<option value="ALL">--- Xem tất cả tài liệu ---</option>' + 
-                uniqueMeetings.map(m => `<option value="${m}">${m}</option>`).join('');
-            select.value = currentValue;
-        }
-
-        async function loadDocsByMeeting() {
-            const meetingFilter = document.getElementById('meeting-filter').value;
-            let query = _supabase.from('documents').select('*').order('created_at', { ascending: false });
-            
-            if (meetingFilter !== "ALL") {
-                query = query.eq('meeting_name', meetingFilter);
+            const container = document.getElementById('meeting-container');
+            if (uniqueMeetings.length === 0) {
+                container.innerHTML = "<p class='text-center text-slate-400 py-10'>Hiện chưa có phiên họp nào được thiết lập.</p>";
+                return;
             }
 
-            const { data } = await query;
-            const list = document.getElementById('file-list');
-            list.innerHTML = data.map(f => `
-                <div class="flex justify-between items-center p-5 active:bg-slate-100">
-                    <div>
-                        <p class="text-[9px] text-blue-500 font-bold uppercase">${f.meeting_name}</p>
-                        <p class="font-bold text-slate-700 text-sm">${f.name}</p>
+            container.innerHTML = uniqueMeetings.map(m => `
+                <div onclick="openMeeting('${m}')" class="meeting-card bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex justify-between items-center cursor-pointer transition-all hover:border-blue-500">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-blue-100 p-3 rounded-2xl text-blue-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <span class="font-black text-slate-800 text-lg">${m}</span>
                     </div>
-                    <button onclick="openPreview('${f.url}', '${f.name}')" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase shadow-md">Xem</button>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-300" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
                 </div>
-            `).join('') || "<p class='p-10 text-center text-slate-400 italic text-sm'>Không có tài liệu.</p>";
+            `).join('');
         }
 
+        // 2. Mở một cuộc họp cụ thể
+        async function openMeeting(meetingName) {
+            currentMeeting = meetingName;
+            document.getElementById('header-title').innerText = meetingName;
+            document.getElementById('back-btn').classList.remove('hidden');
+            document.getElementById('meeting-container').classList.add('hidden');
+            document.getElementById('document-container').classList.remove('hidden');
+
+            const { data } = await _supabase.from('documents').select('*').eq('meeting_name', meetingName).order('created_at', { ascending: false });
+            const list = document.getElementById('file-list');
+            
+            list.innerHTML = data.map(f => `
+                <div class="flex justify-between items-center p-5 active:bg-slate-100 border-b border-slate-50 last:border-0">
+                    <span class="font-bold text-slate-700 text-sm truncate pr-4">${f.name}</span>
+                    <button onclick="openPreview('${f.url}', '${f.name}')" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase shadow-md active:scale-90 transition">Xem</button>
+                </div>
+            `).join('') || "<p class='p-10 text-center text-slate-400 italic text-sm text-center'>Không có tài liệu.</p>";
+        }
+
+        // 3. Quay lại danh sách cuộc họp
+        function showMeetings() {
+            document.getElementById('header-title').innerText = "Danh sách phiên họp";
+            document.getElementById('back-btn').classList.add('hidden');
+            document.getElementById('meeting-container').classList.remove('hidden');
+            document.getElementById('document-container').classList.add('hidden');
+            loadMeetings();
+        }
+
+        // 4. Các hàm xem tài liệu và đăng ký
         window.openPreview = (url, name) => {
             document.getElementById('preview-title').innerText = name;
             document.getElementById('preview-frame').src = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
             document.getElementById('preview-modal').classList.remove('hidden');
         };
 
-        window.closePreview = () => { document.getElementById('preview-modal').classList.add('hidden'); };
+        window.closePreview = () => {
+            document.getElementById('preview-modal').classList.add('hidden');
+            document.getElementById('preview-frame').src = "";
+        };
 
-        // Tự động cập nhật danh sách mỗi 10 giây
-        setInterval(() => {
-            loadMeetingNames();
-            loadDocsByMeeting();
-        }, 10000);
+        async function registerSpeech() {
+            const name = document.getElementById('speaker-name').value;
+            if (!name) return alert("Vui lòng nhập tên!");
+            const { error } = await _supabase.from('speakers').insert([{ name, time: new Date().toLocaleTimeString('vi-VN') }]);
+            if (!error) {
+                alert("Đã gửi đăng ký thành công!");
+                document.getElementById('speaker-name').value = "";
+            }
+        }
 
-        loadMeetingNames();
-        loadDocsByMeeting();
+        loadMeetings();
     </script>
 </body>
 </html>
