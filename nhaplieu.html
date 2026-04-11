@@ -2,118 +2,84 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nhập Liệu - Phòng Họp Số</title>
+    <title>Nhập Liệu - Google Drive Storage</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-950 text-gray-200 font-sans min-h-screen">
-    <header class="bg-gray-900 p-4 border-b border-gray-800 shadow-xl text-center">
-        <h1 class="font-black text-yellow-500 tracking-tighter text-2xl uppercase">Hệ Thống Nhập Liệu</h1>
-    </header>
+<body class="bg-gray-950 text-gray-200 p-4">
+    <main class="max-w-xl mx-auto space-y-6">
+        <h1 class="text-xl font-bold text-yellow-500 text-center uppercase">Quản lý tài liệu Drive</h1>
 
-    <main class="container mx-auto p-4 max-w-2xl space-y-8 mt-4">
-        
-        <section class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-2xl">
-            <h2 class="font-bold mb-5 text-blue-400 flex items-center italic">
-                📁 TẢI TÀI LIỆU TỪ MÁY TÍNH
-            </h2>
+        <section class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
             <div class="space-y-4">
                 <div>
-                    <label class="text-[10px] text-gray-500 ml-1 mb-1 block">Chọn tệp văn bản (PDF, Word, Excel...)</label>
-                    <input type="file" id="file-input" class="w-full bg-gray-800 p-2 rounded-xl border border-gray-700 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+                    <label class="text-[10px] text-gray-500 block mb-1 uppercase">1. Tên tài liệu</label>
+                    <input type="text" id="doc-name" placeholder="Ví dụ: Nghị quyết số 05..." class="w-full bg-gray-800 p-3 rounded-xl outline-none border border-gray-700 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="text-[10px] text-gray-500 ml-1 mb-1 block">Tên hiển thị tài liệu</label>
-                    <input type="text" id="doc-name-upload" placeholder="Ví dụ: Báo cáo kinh tế xã hội" class="w-full bg-gray-800 p-3 rounded-xl outline-none border border-gray-700 focus:border-blue-500 transition">
+                    <label class="text-[10px] text-gray-500 block mb-1 uppercase">2. Link chia sẻ từ Google Drive</label>
+                    <input type="text" id="doc-url" placeholder="Dán link 'Chia sẻ' vào đây..." class="w-full bg-gray-800 p-3 rounded-xl outline-none border border-gray-700 focus:border-blue-500 text-xs text-blue-300">
                 </div>
-                <div id="upload-status" class="text-xs text-yellow-500 hidden">Đang tải file lên... 0%</div>
-                <button onclick="handleFileUpload()" class="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-black text-white transition-all shadow-lg">TẢI LÊN & CẬP NHẬT</button>
+                <button onclick="addDriveDoc()" class="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-bold transition-all">CẬP NHẬT CHO ĐẠI BIỂU</button>
+            </div>
+            
+            <div class="mt-4 p-3 bg-yellow-900/10 border border-yellow-800/30 rounded-lg text-[10px] text-yellow-600 italic">
+                * Lưu ý: Hãy đảm bảo file trên Drive đã được bật chế độ "Bất kỳ ai có đường liên kết đều có thể xem".
             </div>
         </section>
 
-        <section class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-2xl">
-            <div class="flex justify-between items-center mb-5 border-b border-gray-800 pb-4">
-                <h2 class="font-bold text-green-400 italic">🎤 DANH SÁCH PHÁT BIỂU</h2>
-                <button onclick="clearData('speakers')" class="text-[10px] bg-red-600/20 text-red-400 px-4 py-1.5 rounded-full border border-red-500/30 hover:bg-red-600 hover:text-white transition">DỌN DẸP</button>
-            </div>
-            <div id="nhaplieu-speech-list" class="space-y-3 max-h-60 overflow-y-auto pr-2">
-                <p class="text-gray-600 text-sm italic text-center">Chưa có ai đăng ký...</p>
-            </div>
-        </section>
-
-        <section class="bg-gray-900 p-4 rounded-2xl border border-gray-800 text-center">
-            <button onclick="clearData('documents')" class="w-full bg-gray-700 hover:bg-red-900 text-white text-xs font-bold py-3 rounded-xl transition uppercase">Xóa tất cả tài liệu họp</button>
-        </section>
-
+        <div id="admin-list" class="space-y-2"></div>
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCTxFuyP3SjFvoRDdX5cvT94bH6KlWr-_M",
             authDomain: "phong-hop-khong-giay-6d773.firebaseapp.com",
             databaseURL: "https://phong-hop-khong-giay-6d773-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "phong-hop-khong-giay-6d773",
-            storageBucket: "phong-hop-khong-giay-6d773.firebasestorage.app",
-            messagingSenderId: "1026193403538",
-            appId: "1:1026193403538:web:6083ad5c718dc8749b004b"
+            projectId: "phong-hop-khong-giay-6d773"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const storage = getStorage(app);
 
-        // Xử lý tải file từ máy tính
-        window.handleFileUpload = () => {
-            const file = document.getElementById('file-input').files[0];
-            const name = document.getElementById('doc-name-upload').value;
-            const status = document.getElementById('upload-status');
+        window.addDriveDoc = () => {
+            const name = document.getElementById('doc-name').value;
+            let url = document.getElementById('doc-url').value;
 
-            if (!file || !name) return alert("Vui lòng chọn file và nhập tên hiển thị!");
+            if (!name || !url) return alert("Vui lòng điền đủ!");
 
-            const storageRef = sRef(storage, 'documents/' + file.name);
-            const uploadTask = uploadBytesResumable(storageRef, file);
-
-            status.classList.remove('hidden');
-
-            uploadTask.on('state_changed', 
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    status.innerText = 'Đang tải file lên... ' + Math.round(progress) + '%';
-                }, 
-                (error) => { alert("Lỗi khi tải file: " + error.message); }, 
-                () => {
-                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                        push(ref(db, 'documents'), { name: name, url: downloadURL });
-                        status.innerText = "Tải lên thành công!";
-                        setTimeout(() => status.classList.add('hidden'), 2000);
-                        document.getElementById('file-input').value = "";
-                        document.getElementById('doc-name-upload').value = "";
-                    });
+            // Tự động chuyển đổi link Drive sang link trực tiếp
+            if (url.includes('drive.google.com')) {
+                const fileId = url.split('/d/')[1]?.split('/')[0];
+                if (fileId) {
+                    url = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                } else {
+                    return alert("Link Drive không đúng định dạng!");
                 }
-            );
+            }
+
+            push(ref(db, 'documents'), { name, url });
+            document.getElementById('doc-name').value = "";
+            document.getElementById('doc-url').value = "";
+            alert("Đã thêm thành công!");
         };
 
-        onValue(ref(db, 'speakers'), (snap) => {
-            const list = document.getElementById('nhaplieu-speech-list');
+        // Hiển thị danh sách để Admin xóa khi cần
+        onValue(ref(db, 'documents'), (snap) => {
+            const list = document.getElementById('admin-list');
             list.innerHTML = "";
-            if (!snap.exists()) return list.innerHTML = "<p class='text-gray-600 text-sm italic text-center py-4'>Chưa có đại biểu nào đăng ký.</p>";
             snap.forEach((c) => {
-                const item = c.val();
-                list.innerHTML += `<div class="bg-gray-800 p-4 rounded-xl flex justify-between items-center border-l-4 border-green-500 shadow-inner">
-                    <span class="font-bold text-gray-100">${item.name}</span>
-                    <span class="text-[10px] text-gray-500 font-mono bg-gray-950 px-2 py-1 rounded">${item.time}</span>
+                list.innerHTML += `<div class="flex justify-between items-center p-2 bg-gray-800 rounded-lg text-xs">
+                    <span class="truncate mr-2">${c.val().name}</span>
+                    <button onclick="removeDoc('${c.key}')" class="text-red-500">Xóa</button>
                 </div>`;
             });
         });
 
-        window.clearData = (path) => {
-            if (confirm(`Hệ thống sẽ xóa sạch dữ liệu mục này. Bạn chắc chắn chứ?`)) {
-                remove(ref(db, path)).then(() => alert("Đã xóa xong!"));
-            }
+        window.removeDoc = (key) => {
+            if(confirm("Xóa tài liệu này?")) remove(ref(db, `documents/${key}`));
         };
     </script>
 </body>
