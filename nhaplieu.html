@@ -9,7 +9,7 @@
 <body class="bg-gray-950 text-gray-200 p-6 font-sans">
     <div class="max-w-2xl mx-auto space-y-8">
         <header class="text-center border-b border-gray-800 pb-4">
-            <h1 class="text-3xl font-black text-blue-500 uppercase tracking-tighter">Bảng Điều Khiển Nhập Liệu</h1>
+            <h1 class="text-3xl font-black text-blue-500 uppercase tracking-tighter text-center">Bảng Điều Khiển Nhập Liệu</h1>
         </header>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -19,16 +19,16 @@
                     <input type="file" id="file-input" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition cursor-pointer">
                     <input type="text" id="doc-name" placeholder="Tên hiển thị tài liệu..." class="w-full bg-gray-800 p-4 rounded-2xl outline-none border border-gray-700 focus:border-blue-500 transition text-sm">
                     <button onclick="handleUpload()" id="btn-upload" class="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-2xl font-black transition-all shadow-lg shadow-blue-900/20">CẬP NHẬT TÀI LIỆU</button>
-                    <div id="status" class="hidden text-center text-[10px] text-yellow-500 font-mono animate-pulse">Đang tải lên...</div>
+                    <div id="status" class="hidden text-center text-[10px] text-yellow-500 font-mono animate-pulse uppercase">Đang tải lên và xử lý...</div>
                 </div>
             </section>
 
-            <section class="bg-gray-900 p-6 rounded-3xl border border-gray-800 shadow-2xl overflow-hidden">
+            <section class="bg-gray-900 p-6 rounded-3xl border border-gray-800 shadow-2xl overflow-hidden text-center">
                 <div class="flex justify-between items-center mb-5 pb-2 border-b border-gray-800">
                     <h2 class="font-bold text-green-400 italic text-sm uppercase">🎤 Đăng ký phát biểu</h2>
-                    <button onclick="clearData('speakers')" class="text-[10px] bg-red-900/30 text-red-500 px-3 py-1 rounded-full border border-red-900/50 hover:bg-red-600 hover:text-white transition">Xóa hết</button>
+                    <button onclick="clearData('speakers')" class="text-[10px] bg-red-900/30 text-red-500 px-3 py-1 rounded-full border border-red-900/50 hover:bg-red-600 hover:text-white transition uppercase">Xóa hết</button>
                 </div>
-                <div id="speaker-list" class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar text-sm">
+                <div id="speaker-list" class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar text-sm text-center">
                     <p class="text-gray-600 italic text-center text-xs">Chưa có dữ liệu</p>
                 </div>
             </section>
@@ -46,19 +46,28 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function handleUpload() {
-            const file = document.getElementById('file-input').files[0];
-            const name = document.getElementById('doc-name').value;
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            const nameInput = document.getElementById('doc-name');
+            const name = nameInput.value;
             const status = document.getElementById('status');
             const btn = document.getElementById('btn-upload');
 
-            if (!file || !name) return alert("Vui lòng chọn file và đặt tên!");
+            if (!file || !name) return alert("Vui lòng chọn file và đặt tên hiển thị!");
 
             status.classList.remove('hidden');
             btn.disabled = true;
 
-            const fileName = `${Date.now()}_${file.name}`;
+            // --- HÀM LÀM SẠCH TÊN FILE ĐỂ TRÁNH LỖI INVALID KEY ---
+            const safeFileName = file.name.normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "") // Xóa dấu tiếng Việt
+                .replace(/[^a-zA-Z0-9.]/g, "_"); // Thay ký tự đặc biệt (dấu phẩy, cách...) bằng "_"
+            
+            const fileName = `${Date.now()}_${safeFileName}`;
+            // -----------------------------------------------------
 
             const { data: stData, error: stError } = await _supabase.storage.from('tailieu').upload(fileName, file);
+            
             if (stError) {
                 alert("Lỗi Storage: " + stError.message);
                 status.classList.add('hidden');
@@ -74,9 +83,9 @@
 
             if (dbError) alert("Lỗi Database: " + dbError.message);
             else {
-                alert("✅ Đã cập nhật tài liệu thành công!");
-                document.getElementById('file-input').value = "";
-                document.getElementById('doc-name').value = "";
+                alert("✅ Thành công! Đã cập nhật tài liệu.");
+                fileInput.value = "";
+                nameInput.value = "";
             }
         }
 
@@ -84,11 +93,11 @@
             const { data } = await _supabase.from('speakers').select('*').order('created_at', { ascending: true });
             const container = document.getElementById('speaker-list');
             if (!data || data.length === 0) {
-                container.innerHTML = "<p class='text-gray-600 text-center py-4 text-xs italic'>Trống</p>";
+                container.innerHTML = "<p class='text-gray-600 text-center py-4 text-xs italic text-center'>Trống</p>";
                 return;
             }
             container.innerHTML = data.map(s => `
-                <div class="flex justify-between p-3 bg-gray-800 rounded-xl border-l-4 border-green-500 shadow-inner">
+                <div class="flex justify-between p-3 bg-gray-800 rounded-xl border-l-4 border-green-500 shadow-inner mb-2">
                     <span class="font-bold text-gray-200">${s.name}</span>
                     <span class="text-gray-500 font-mono text-[10px]">${s.time}</span>
                 </div>
@@ -96,7 +105,7 @@
         }
 
         async function clearData(table) {
-            if (!confirm(`Bạn chắc chắn muốn dọn dẹp ${table}?`)) return;
+            if (!confirm(`Bạn chắc chắn muốn dọn dẹp dữ liệu này?`)) return;
             const { error } = await _supabase.from(table).delete().neq('id', 0);
             if (error) alert("Lỗi: " + error.message);
             else location.reload();
