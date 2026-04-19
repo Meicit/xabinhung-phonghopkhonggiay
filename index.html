@@ -97,7 +97,7 @@
             document.getElementById('meeting-container').classList.add('hidden');
             document.getElementById('document-container').classList.remove('hidden');
 
-            const { data } = await _supabase.from('documents').select('*').eq('meeting_name', meetingName).order('created_at', { ascending: false });
+            const { data } = await _supabase.from('documents').select('*').eq('meeting_name', meetingName).order('created_at', { ascending: true });
             const list = document.getElementById('file-list');
             
             list.innerHTML = data.map(f => `
