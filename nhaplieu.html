@@ -94,7 +94,7 @@
         }
 
         async function fetchAdminDocs() {
-            const { data } = await _supabase.from('documents').select('*').order('created_at', { ascending: false });
+            const { data } = await _supabase.from('documents').select('*').order('created_at', { ascending: true });
             const container = document.getElementById('admin-doc-list');
             container.innerHTML = data.map(d => `
                 <div class="bg-gray-800 p-3 rounded-xl border border-gray-700 flex justify-between items-center group">
